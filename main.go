@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // Todo 任务结构体
@@ -66,11 +67,11 @@ func createTable(db *sql.DB) error {
 	title varchar(200) not null,
 	description text,
 	status varchar(20) default 'pending' check(status in('pending','completed','cancelled')),
-	priority charchar(10) default 'medium' check(priotity in('low','medium','high')),
+	priority varchar(10) default 'medium' check(priority in('low','medium','high')),
 	due_date date,
-	create_at datetime default current_timesatmp,
-	updated_at datetime default current_timesatmp,
-	complete_at datetime
+	created_at datetime default current_timestamp,
+	updated_at datetime default current_timestamp,
+	completed_at datetime
 	);
 `
 	_, err := db.Exec(query)
@@ -336,10 +337,8 @@ func (s TodoServiceImpl) ToggleStatus(id int, status string) (*Todo, error) {
 	} else {
 		todo.Status = "completed"
 
-		//now:=time.Now()
-		//todo.CompletedAt=&now
-
-		todo.CompletedAt = new(time.Now())
+		now := time.Now()
+		todo.CompletedAt = &now
 	}
 
 	// 将新状态和完成时间写回数据库
