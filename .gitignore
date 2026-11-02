@@ -1,19 +1,47 @@
-#
-# 编译产物
+# ---------- 编译产物 ----------
+# Windows 可执行文件
 *.exe
+# Linux / macOS 构建产物（go build 默认输出名）
+todo-api
+# Go 测试与性能分析产物
+*.test
 *.out
+*.prof
 
-# 依赖目录
+# ---------- 依赖与构建目录 ----------
 vendor/
+bin/
+dist/
+tmp/
 
-# IDE 配置
-.idea/
-.vscode/
-*.swp
+# ---------- 数据库文件 ----------
+# todos.db* 同时覆盖 todos.db、-journal、-wal、-shm 四种文件
+todos.db*
+*.sqlite
+*.sqlite3
 
-# 敏感配置
+# ---------- 日志 ----------
+*.log
+logs/
+
+# ---------- 敏感配置 ----------
 .env
+.env.*
+!.env.example
 config-prod.yml
 
-# 数据库文件（运行时生成，不需要提交）
-todos.db
+# ---------- IDE / 编辑器 ----------
+.idea/
+.vscode/
+.history/
+*.swp
+*.swo
+*.iml
+
+# ---------- 操作系统 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 工具元数据 ----------
+.workbuddy/
