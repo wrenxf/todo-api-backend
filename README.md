@@ -23,15 +23,38 @@
 
 ## 目录结构
 
+后端采用 `cmd + internal` 标准分层结构，依赖方向单向流动：
+`handler → service → repository → database`。
+
 ```
-01-todo-api/                    # 后端仓库
-├── main.go              # 后端全部代码（模型 / 数据库 / 服务 / 路由 / 中间件）
+01-todo-api/                        # 后端仓库
+├── cmd/
+│   └── api/
+│       └── main.go                 # 程序入口：只做依赖组装与启动
+├── internal/                       # 内部包（不可被外部模块导入）
+│   ├── model/
+│   │   └── todo.go                 # 结构体、请求/响应体、ErrTodoNotFound
+│   ├── database/
+│   │   └── sqlite.go               # 连接、建表建索引、示例数据 seed
+│   ├── repository/
+│   │   └── todo_repository.go      # 仓储接口 + SQLite 实现（所有 SQL）
+│   ├── service/
+│   │   └── todo_service.go         # 业务逻辑（默认值、时间戳、状态切换）
+│   ├── middleware/
+│   │   └── middleware.go           # CORS、请求日志、panic 恢复
+│   ├── handler/
+│   │   ├── response.go             # 统一响应与参数校验辅助
+│   │   ├── errors.go               # 参数错误构造函数
+│   │   ├── system_handler.go       # 首页 / 健康检查 / 接口文档
+│   │   └── todo_handler.go         # 任务接口（结构体方法）
+│   └── router/
+│       └── router.go               # 集中注册路由
 ├── go.mod
 ├── go.sum
-├── todos.db             # 运行时自动生成，已加入 .gitignore
+├── todos.db                        # 运行时自动生成，已加入 .gitignore
 └── README.md
 
-01-todo-api-frontend/           # 前端，独立目录
+01-todo-api-frontend/               # 前端，独立目录
 ├── index.html
 ├── package.json
 ├── vite.config.js       # 开发服务器与 /api 代理
@@ -50,23 +73,37 @@
 
 需要 Go 1.21+ 与 CGO 可用的 64 位 gcc（Windows 推荐 MinGW-W64）。
 
+在**项目根目录**执行：
+
 ```bash
 cd 01-todo-api
 go mod tidy
-go run .
+go run ./cmd/api
 ```
+
+> 入口文件位于 `cmd/api/main.go`，因此不能直接在根目录用 `go run .`（根目录没有 Go 文件）。
+> 也可以进入入口目录再运行：`cd cmd\api && go run .`
 
 服务地址：<http://localhost:8080>
 
 首次启动会自动创建 `todos.db`、建表建索引，并写入 3 条示例任务。
 
-> Windows 若默认 gcc 是 32 位（如 Strawberry Perl 自带版本），需显式指定编译器：
+> **Windows 编译器提示**：若默认 gcc 是 32 位（如 Strawberry Perl 自带版本），`go build` 会报
+> `cc1.exe: sorry, unimplemented: 64-bit mode not compiled in`。需显式指定 64 位编译器：
 >
-> ```bash
-> set CC=D:\IDE\mingw64\bin\gcc.exe   # cmd
-> $env:CC="D:\IDE\mingw64\bin\gcc.exe" # PowerShell
-> go run .
+> ```powershell
+> # 当前终端临时生效
+> $env:CC="D:\IDE\mingw64\bin\gcc.exe"
+> go run ./cmd/api
 > ```
+>
+> 想一劳永逸，可写入用户环境变量（`setx` 只对**新开**的终端生效）：
+>
+> ```powershell
+> setx CC "D:\IDE\mingw64\bin\gcc.exe"
+> ```
+>
+> cmd 用户对应写法：`set CC=D:\IDE\mingw64\bin\gcc.exe`
 
 ### 2. 启动前端
 
@@ -173,6 +210,6 @@ VITE_API_BASE=http://127.0.0.1:8080
 
 ## 已验证
 
-- 后端 `go build` 通过，9 个接口均已用 curl 跑通（含 400 / 404 分支）
+- 后端 `go build ./...` 通过（`cmd/api` + `internal` 全部包），9 个接口均已用 curl 跑通（含 400 / 404 分支）
 - 前端 `npm run build` 通过
 - 开发服务器 `/api` 代理转发正常，CORS 预检返回 204
