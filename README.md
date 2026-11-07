@@ -1,6 +1,8 @@
 # 01-todo-api
 
-基于 Go + Gin + SQLite 的任务管理 REST API，附带一个 Vue 3 + Vite 的最小联调前端。
+基于 Go + Gin + SQLite 的任务管理 REST API。
+
+> 前端为独立仓库，不在本仓库内。
 
 ## 功能
 
@@ -18,7 +20,6 @@
 |---|---|
 | 后端 | Go 1.26、Gin v1.12、database/sql |
 | 数据库 | SQLite（mattn/go-sqlite3，CGO） |
-| 前端 | Vue 3、Vite 5、原生 fetch |
 | 中间件 | CORS、请求日志、panic 恢复 |
 
 ## 目录结构
@@ -53,23 +54,11 @@
 ├── go.sum
 ├── todos.db                        # 运行时自动生成，已加入 .gitignore
 └── README.md
-
-01-todo-api-frontend/               # 前端，独立目录
-├── index.html
-├── package.json
-├── vite.config.js       # 开发服务器与 /api 代理
-├── .env.example         # 后端地址配置示例
-├── README.md
-└── src/
-    ├── main.js
-    ├── api.js           # 后端请求封装
-    ├── App.vue          # 页面与交互
-    └── style.css
 ```
 
 ## 快速开始
 
-### 1. 启动后端
+### 启动后端
 
 需要 Go 1.21+ 与 CGO 可用的 64 位 gcc（Windows 推荐 MinGW-W64）。
 
@@ -104,25 +93,6 @@ go run ./cmd/api
 > ```
 >
 > cmd 用户对应写法：`set CC=D:\IDE\mingw64\bin\gcc.exe`
-
-### 2. 启动前端
-
-前端位于同级目录 `01-todo-api-frontend`：
-
-```bash
-cd ../01-todo-api-frontend
-npm install
-npm run dev
-```
-
-访问地址：<http://localhost:5173>
-
-生产构建与本地预览：
-
-```bash
-npm run build
-npm run preview
-```
 
 ## 接口一览
 
@@ -168,48 +138,6 @@ curl -X POST http://localhost:8080/api/todos \
 curl "http://localhost:8080/api/todos?page=1&page_size=5&status=pending"
 ```
 
-## 前端如何配置后端地址
-
-前端有两种对接方式，**默认使用方式一**。
-
-### 方式一：走 Vite 代理（推荐，默认）
-
-`../01-todo-api-frontend/src/api.js` 中 `BASE_URL` 默认为空，请求 `/api/...` 由 Vite 转发到后端：
-
-```js
-// 01-todo-api-frontend/vite.config.js
-proxy: {
-  '/api': {
-    target: 'http://127.0.0.1:8080',
-    changeOrigin: true,
-  },
-}
-```
-
-浏览器看到的是同源请求（`http://localhost:5173/api/...`），因此开发阶段不涉及跨域。
-
-后端换了端口或部署到其他机器时，修改 `VITE_PROXY_TARGET` 即可，无需改代码：
-
-```bash
-# 01-todo-api-frontend/.env.local（复制自 .env.example）
-VITE_PROXY_TARGET=http://192.168.1.20:9000
-```
-
-### 方式二：浏览器直连后端
-
-后端已启用 CORS（允许所有来源）。把 `VITE_API_BASE` 设为后端完整地址，请求将绕过代理直接发出：
-
-```bash
-# 01-todo-api-frontend/.env.local
-VITE_API_BASE=http://127.0.0.1:8080
-```
-
-此时页面地址与接口地址不同源，依赖后端返回的 `Access-Control-Allow-Origin` 头。
-
-> 修改 `.env*` 或 `vite.config.js` 后需重启 `npm run dev`。
-
 ## 已验证
 
 - 后端 `go build ./...` 通过（`cmd/api` + `internal` 全部包），9 个接口均已用 curl 跑通（含 400 / 404 分支）
-- 前端 `npm run build` 通过
-- 开发服务器 `/api` 代理转发正常，CORS 预检返回 204
